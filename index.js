@@ -136,24 +136,33 @@ class PhilipsTvAccessory {
         const {name, poll_status_interval} = this.config;
 
         this.volumeService = new Service.TelevisionSpeaker(name + " Volume", "tvVolume");
-        this.volumeService
-            .getCharacteristic(Characteristic.Active)
-            .on('get', (callback) => {
-                callback(null, 1)
-            })
-            .on('set', (value, callback) => {
-                this.PhilipsTV.setMuteState(value, callback)
-            });
         const volumeLevel = this.volumeService
             .getCharacteristic(Characteristic.Volume);
+        const mute = this.volumeService
+            .getCharacteristic(Characteristic.Mute);
+
+        mute
+            .on('get', (callback) => {
+                callback(null, this.PhilipsTV.getMuteState)
+            })
+            .on('set', (value, callback) => {
+                this.PhilipsTV.setMuteState(value, callback);
+                mute.updateValue(value);
+            });
+        
+
         volumeLevel
             .on('get', this.PhilipsTV.getVolumeState)
             .on('set', (value, callback) => {
                 this.state.volume = value;
-                this.PhilipsTV.setVolumeState(value, callback)
+                this.PhilipsTV.setVolumeState(value, callback);
+                volumeLevel.updateValue(value);
             });
         if (poll_status_interval) {
             setInterval(() => {
+                this.PhilipsTV.getMuteState((err,value) => {
+                    mute.updateValue(value);
+                });
                 this.PhilipsTV.getVolumeState((err, value) => {
                     if (this.state.volume !== value) {
                         this.state.volume = value;

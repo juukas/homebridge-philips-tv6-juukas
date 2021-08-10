@@ -181,6 +181,19 @@ class PhilipsTV {
         });
     };
 
+    getMuteState = (callback) => {
+        this.api("audio/volume").then((data) => {
+            this.volume = {
+                ...this.volume,
+                ...data
+            };
+            
+            callback(null, this.volume.muted);
+        }).catch(() => {
+            callback(null, false)
+        })
+    };
+
     setMuteState = (value, callback) => {
         this.volume.muted = !value;
         this.api("audio/volume", this.volume).then(() => {
